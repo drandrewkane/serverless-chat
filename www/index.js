@@ -106,7 +106,7 @@ function initClient(requestUrl, clientId) {
       run(payload);
     }
     else if ('onMessageArrived' in store) {
-      translation = translateInput(payload.message.text, payload.message.timestamp);
+      translation = translateInput(payload.message.text, payload.message.source_lang, payload.message.custom_term, payload.message.timestamp);
       store.onMessageArrived(message.destinationName, payload);
     } else {
       console.log('ignored: ' + message.destinationName + " -> " + message.payloadString);
@@ -130,17 +130,40 @@ function connectClient() {
   });
 }
 
-function translateInput(text, id) {
-  //var source_language = document.getElementById('source_lang');
-  var source_language = 'auto'
+function translateInput(text, source_lang, source_terms, id) {
+  var source_language = source_lang;
   var target_language = document.getElementById('target_lang');
   var target_language = target_language.options[target_language.selectedIndex].value
-  var translate = new AWS.Translate();
+  var baseTerm = document.getElementById('terminology').value;
   var params = {
     SourceLanguageCode: source_language,
     TargetLanguageCode: target_language,
     Text: text
   };
+  // Use the sender's terminology, but only if they have one and it exists for their language
+  if (source_terms != "") {
+    var translate = new AWS.Translate();
+    var full_term_name = source_terms + '-' + source_language;
+    var termParams = {
+      Name: full_term_name,
+      TerminologyDataFormat: 'CSV'
+    };
+    translate.getTerminology(termParams, function(err, data) {
+      if (data) {
+        params.TerminologyNames = [ full_term_name ];
+      }
+      else console.log('Unable to find terminolgy: ', full_term_name);
+      translateText(params, id)
+    });
+  }
+  else {
+    translateText(params, id)
+  }
+}
+
+function translateText(params, id) {
+  var translate = new AWS.Translate();
+  console.log(params);
   translate.translateText(params, function (err, data) {
     if (err) {
       console.log(err, err.stack);
@@ -152,7 +175,7 @@ function translateInput(text, id) {
     }
     else {
       console.log(data);
-      var storeText = {sourceLanguage: data.SourceLanguageCode, sourceText: text, targetLanguage: target_language, translatedText: data.TranslatedText}
+      var storeText = {sourceLanguage: params.SourceLanguageCode, sourceText: params.text, targetLanguage: params.TargetLanguageCode, translatedText: data.TranslatedText}
       localStorage.setItem('translatesCache.' + id, JSON.stringify(storeText));
       $.each(localStorage, function(key, value){
         if (key.substring(0,15) == 'translatesCache') {

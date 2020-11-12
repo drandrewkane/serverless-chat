@@ -11,7 +11,7 @@ Resources:
     Properties:
       Handler: index.handler
       Code: ../fn
-      Runtime: nodejs6.10
+      Runtime: nodejs10.x
       Role: !GetAtt ChatFunctionRole.Arn
       Environment:
         Variables:
@@ -242,6 +242,7 @@ Resources:
               -
                 Action:
                   - translate:TranslateText
+                  - translate:GetTerminology
                   - comprehend:DetectDominantLanguage
                 Effect: Allow
                 Resource: ['*']

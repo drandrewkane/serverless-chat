@@ -45,12 +45,12 @@ sed -e "s/<AWS_REGION>/${AWS_REGION}/g" \
     < www/index.js > tmp/index.js
 
 echo Uploading static website files
-aws s3 cp tmp/index.js s3://${S3_BUCKET} --region ${AWS_REGION} --acl public-read-write
-aws s3 cp www/index.html s3://${S3_BUCKET} --region ${AWS_REGION} --acl public-read-write
-aws s3 cp www/custom.css s3://${S3_BUCKET} --region ${AWS_REGION} --acl public-read-write
+aws s3 cp tmp/index.js s3://${S3_BUCKET} --region ${AWS_REGION} --acl public-read
+aws s3 cp www/index.html s3://${S3_BUCKET} --region ${AWS_REGION} --acl public-read
+aws s3 cp www/custom.css s3://${S3_BUCKET} --region ${AWS_REGION} --acl public-read
 # Setting the error document to index.html is a hack to make <url>/myroom load the chat application.
 aws s3 website s3://${S3_BUCKET} --region ${AWS_REGION} --index-document index.html --error-document index.html
 
-echo Visit http://${S3_BUCKET}.s3-website-${AWS_REGION}.amazonaws.com
+echo Visit http://${S3_BUCKET}.s3-website.${AWS_REGION}.amazonaws.com
 
 rm tmp/*

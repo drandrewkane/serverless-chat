@@ -16,7 +16,7 @@ const htmlPage = `
 
 <head>
   <title>Babel Chat</title>
-  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.340.0.min.js"></script>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.712.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
   <link rel="stylesheet" href="/custom.css">
@@ -34,7 +34,6 @@ const htmlPage = `
 `;
 
 const htmlContent = `
-<div id="messages" class="col-sm-12" style="max-height: 70%; overflow: auto;"></div>
 <div id="prompt" class="col-sm-12">
     <form role="form" id="lineForm" class="form-horizontal">
             <div class="form-row">
@@ -52,7 +51,7 @@ const htmlContent = `
                     <option value="zh">🇨🇳</option>
                     <option value="ja">🇯🇵</option>
                   </select>
-                </div>
+                  <input type="text" id="terminology" placeholder="Custom terminology">
             </div>
             <div class="form-row align-items-center">
                     <div class="col-sm-2">
@@ -68,6 +67,7 @@ const htmlContent = `
         </div>
     </form>
 </div>
+<div id="messages" class="col-sm-12" style="max-height: 80%; overflow: auto;"></div>
 `;
 
 exports.handler = (event, context, callback) => {
@@ -111,7 +111,7 @@ function sendAllMessages(inputData) {
 
     dynamodb.query(params, function(err, data) {
         if (err) console.log(err);
-        else {
+        else { 
             console.log(data);
             var clientTopic = APP_NAME + "/in/" + inputData.clientId;
 
@@ -191,12 +191,13 @@ function clientConnected(data) {
             evt.preventDefault();
             var user = document.getElementById('user');
             var line = document.getElementById('line');
-            //var source_language = document.getElementById('source_lang');
-            var target_language = document.getElementById('target_lang');
+            var terminology = document.getElementById('terminology');
+            var language_control = document.getElementById('target_lang');
+            var source_language = language_control.options[language_control.selectedIndex].value
             var timestamp_date = Date.now();
             if (user.value !== '' && line.value !== '') {
                 localStorage.setItem(store.room, JSON.stringify({ user: user.value }));
-                store.sendMessage({ room: store.room, message: { user: user.value, text: line.value, source_lang: 'en', timestamp: timestamp_date}});
+                store.sendMessage({ room: store.room, message: { user: user.value, text: line.value, source_lang: source_language, custom_term: terminology.value, timestamp: timestamp_date}});
                 line.value = '';
             }
         });
@@ -213,7 +214,7 @@ function clientConnected(data) {
         htmlContent: htmlContent,
         windowTitle: WINDOW_TITLE,
         room: data.path,
-        messages: [ { text: 'Welcome to chat room ' + data.path } ]
+        messages: [ { text: 'Translation chat room: ' + data.path } ]
     };
 
     sendMessage(clientTopic, message);
